@@ -23,7 +23,7 @@ def laplacian_variance(frame: np.ndarray) -> float: #Laplacian: Mathematical ope
     # images are stored in 8 bit unsigned binary. Laplacian operation produces -ve values which can result in the loss of the information(regarding the decrease in the brightness of the edge)
     # CV_64F -> tells OpenCV to store the Laplacian results as 64-bit floating point numbers, which can hold negatives, decimals, and very large values with high precision.
     # To sumarize if 8-bit binary was used the variance will be low and hence the point of using the threshold will be use less.
-    return float(laplacian.var())
+    return float(laplacian.var())  
 
 
 def is_blurry(frame: np.ndarray, threshold: float = DEFAULT_BLUR_THRESHOLD) -> bool:

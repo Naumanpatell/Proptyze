@@ -26,8 +26,7 @@ async def upload_video(
     # Files Validation using the allowed extentions
 
     ext = (file.filename or "").rsplit(".", 1)[-1].lower() 
-    # if there is no name used in file.filename then name will be taken as NONE hence "" protects
-    # the code from crashing the .rsplit() function
+    # if there is no name used in file.filename then name will be taken as NONE hence "" protects the code from crashing the .rsplit() function
 
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
