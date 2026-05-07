@@ -1,8 +1,9 @@
 fastapi==0.115.0
+opencv-python-headless==4.10.0.84
 uvicorn[standard]==0.30.6
 python-multipart==0.0.9
 pydantic-settings==2.4.0
 sqlalchemy==2.0.35
-psycopg2-binary==2.9.9
+psycopg[binary]==3.2.10
 python-dotenv==1.0.1
 httpx==0.27.2
