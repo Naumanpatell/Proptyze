@@ -2,9 +2,9 @@
 
 CONDITION_CLASSES = [
     "wall_crack",       # cracksdetection — crackdetection-xedoq — v1 — 956 images
-    "damp",
+    "damp",             # damp — wall-quality-detection — dip-project-f2lk5 — 250 imgs — v1 
     "mould",            # mould-0hu11 — yolo-wislr — v2 — 6,233 images — mAP 95.5%
-    "damaged_flooring",
+    "damaged_flooring", # could not find any
     "peeling_paint",    # 4-jwvne — building-defect-vbgco — v1 — 27 images
                         # paint_defects_ds2 — train-te25s — v4 — 1.2k images
     "broken_fixture",

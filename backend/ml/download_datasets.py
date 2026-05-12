@@ -1,5 +1,6 @@
 # download_datasets.py
-# Save in backend/ and run from there
+# Location: backend/ml/download_datasets.py
+# Run from backend/ml/ directory
 # pip install roboflow
 
 from roboflow import Roboflow
@@ -37,6 +38,12 @@ DATASETS = [
         4,
         "datasets/condition/peeling_paint_2"
     ),
+    (
+        "dip-project-f2lk5",
+        "wall-quality-detection",
+        1,
+        "datasets/condition/damp"
+    ),
 
     # ── SECURITY MODEL ───────────────────────────────────────────────
     # Add security datasets here as you confirm them
@@ -44,8 +51,17 @@ DATASETS = [
 
 for workspace_slug, project_slug, version_num, output_path in DATASETS:
     print(f"\n{'='*60}")
-    print(f"Downloading: {project_slug} -> {output_path}")
+    print(f"Checking: {project_slug}")
     print(f"{'='*60}")
+
+    # Skip if folder already exists and has files in it
+    if os.path.exists(output_path) and any(
+        files for _, _, files in os.walk(output_path)
+    ):
+        print(f"Skipping — already downloaded -> {output_path}")
+        continue
+
+    print(f"Downloading: {project_slug} -> {output_path}")
 
     try:
         os.makedirs(output_path, exist_ok=True)
