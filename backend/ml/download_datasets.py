@@ -86,10 +86,9 @@ for workspace_slug, project_slug, version_num, output_path in DATASETS:
     print(f"Downloading: {project_slug} -> {output_path}")
 
     try:
-        os.makedirs(output_path, exist_ok=True)
         project = rf.workspace(workspace_slug).project(project_slug)
         version = project.version(version_num)
-        version.download("yolov8", location=output_path)
+        version.download("yolov8", location=output_path, overwrite=True)
         print(f"Done -> {output_path}")
 
     except Exception as e:
