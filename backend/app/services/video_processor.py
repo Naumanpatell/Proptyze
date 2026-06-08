@@ -1,10 +1,14 @@
 import logging
 import os
+import uuid
 
 from sqlalchemy.orm import Session
 
-from app.models.database import SessionLocal, Scan
+from app.models.database import SessionLocal, Scan, Report
 from app.services.frame_extractor import extract_frames
+from app.services.yolo_detector import detect
+from app.services.scoring_engine import compute_score
+from app.services.report_generator import generate_summary
 
 logger = logging.getLogger(__name__)
 
@@ -41,19 +45,18 @@ async def process_video(scan_id: str, video_path: str) -> None:
 
         # YOLO detection
         _update_scan(db, scan_id, stage="detecting", progress=30)
-        # detections = run_yolo(frame_paths)
+        logger.info("[%s] Running YOLO detection on %d frames", scan_id, len(frame_paths))
+        detections = detect(frame_paths)
+        logger.info("[%s] %d total detections found", scan_id, len(detections))
+        _update_scan(db, scan_id, progress=65)
 
         # scoring
-        _update_scan(db, scan_id, stage="scoring", progress=70)
-        # score, grade = score_property(detections)
 
         # report generation
-        _update_scan(db, scan_id, stage="generating_report", progress=85)
-        # report = generate_report(scan_id, score, grade, detections)
 
-        # Done
+       
         _update_scan(db, scan_id, status="complete", stage="done", progress=100)
-        logger.info("[%s] Pipeline complete", scan_id)
+        logger.info("[%s] Pipeline complete — score %d (%s)", scan_id, score, grade)
 
     except Exception as exc:
         logger.exception("[%s] Pipeline failed: %s", scan_id, exc)
