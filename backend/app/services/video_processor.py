@@ -51,10 +51,26 @@ async def process_video(scan_id: str, video_path: str) -> None:
         _update_scan(db, scan_id, progress=65)
 
         # scoring
+        _update_scan(db, scan_id, stage="scoring", progress=70)
+        score_result = compute_score(detections, neighbourhood_data={}, frame_paths=frame_paths)
+        score: int = score_result["score"]
+        grade: str = score_result["grade"]
+        logger.info("[%s] Score: %d  Grade: %s", scan_id, score, grade)
 
         # report generation
+        _update_scan(db, scan_id, stage="generating_report", progress=85)
+        summary = await generate_summary(score, detections, neighbourhood={})
+        report = Report(
+            id=str(uuid.uuid4()),
+            scan_id=scan_id,
+            score=score,
+            grade=grade,
+            ai_summary=summary,
+            detections=detections,
+        )
+        db.add(report)
+        db.commit()
 
-       
         _update_scan(db, scan_id, status="complete", stage="done", progress=100)
         logger.info("[%s] Pipeline complete — score %d (%s)", scan_id, score, grade)
 
