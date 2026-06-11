@@ -12,7 +12,9 @@
       "Bash(npm create:*)",
       "mcp__ide__getDiagnostics",
       "Skill(claude-api)",
-      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\User\\\\Proptyze\\\\frontend\\\\src\" -Recurse | Where-Object { -not $_.PSIsContainer } | Select-Object FullName)"
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\User\\\\Proptyze\\\\frontend\\\\src\" -Recurse | Where-Object { -not $_.PSIsContainer } | Select-Object FullName)",
+      "PowerShell(Get-Command *)",
+      "PowerShell(& \"C:\\\\Users\\\\User\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python313\\\\python.exe\" -c \"from app.routers.reports import router; print\\('OK'\\)\" 2>&1)"
     ]
   }
 }

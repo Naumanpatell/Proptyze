@@ -7,9 +7,22 @@ body {
   @apply bg-gray-50 text-gray-900;
 }
 
+/* ── Keyframes ─────────────────────────────────────────────────── */
+
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pop-in {
+  0%   { opacity: 0; transform: scale(0.75); }
+  65%  { transform: scale(1.06); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 @keyframes draw-check {
@@ -22,10 +35,63 @@ body {
   to   { transform: rotate(270deg); opacity: 1; }
 }
 
-.animate-fade-in   { animation: fade-in   0.4s ease both; }
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+@keyframes bar-grow {
+  from { width: 0%; }
+}
+
+@keyframes live-ping {
+  0%, 100% { transform: scale(1);   opacity: 1; }
+  50%       { transform: scale(1.6); opacity: 0; }
+}
+
+@keyframes score-count {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── Utility classes ───────────────────────────────────────────── */
+
+.animate-fade-in    { animation: fade-in   0.4s ease both; }
+.animate-slide-up   { animation: slide-up  0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-pop-in     { animation: pop-in    0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.animate-score-count { animation: score-count 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
 .animate-draw-check {
   stroke-dasharray: 30;
   stroke-dashoffset: 30;
   animation: draw-check 0.5s 0.3s ease forwards;
 }
 .animate-spin-once { animation: spin-once 0.6s ease both; }
+
+/* Shimmer overlay — place as an ::after pseudo on the progress bar wrapper */
+.progress-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.progress-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,0.45) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+.live-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: live-ping 1.4s ease-in-out infinite;
+}

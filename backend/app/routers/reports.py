@@ -91,7 +91,7 @@ async def delete_report(report_id: str, db: Session = Depends(get_db)):
     db.commit()
 
     # Clean up uploaded file and extracted frames
-    for candidate in os.listdir(settings.upload_dir):
+    for candidate in (os.listdir(settings.upload_dir) if os.path.isdir(settings.upload_dir) else []):
         if candidate.startswith(scan_id):
             try:
                 os.remove(os.path.join(settings.upload_dir, candidate))
