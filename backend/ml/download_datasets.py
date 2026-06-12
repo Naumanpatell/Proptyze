@@ -5,10 +5,11 @@
 
 from roboflow import Roboflow
 import os
+from dotenv import load_dotenv
 
-API_KEY = "FdxByRCKD9r0CChZZ4dZ"
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-rf = Roboflow(api_key=API_KEY)
+rf = Roboflow(api_key=os.environ["ROBOFLOW_API_KEY"])
 
 DATASETS = [
     # (workspace_slug, project_slug, version, output_path)
