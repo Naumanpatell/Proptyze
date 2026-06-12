@@ -5,9 +5,9 @@ const api = axios.create({
   timeout: 30000,
 })
 
-export const uploadVideo = (file, onProgress) => {
+export const uploadFiles = (files, onProgress) => {
   const form = new FormData()
-  form.append('file', file)
+  files.forEach(file => form.append('files', file))
   return api.post('/upload', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
     onUploadProgress: (e) => onProgress?.(Math.round((e.loaded * 100) / e.total)),
