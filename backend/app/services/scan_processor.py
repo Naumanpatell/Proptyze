@@ -22,7 +22,7 @@ def _update_scan(db: Session, scan_id: str, **kwargs) -> None:
     db.query(Scan).filter(Scan.id == scan_id).update(kwargs)
     db.commit()
 
-
+    
 async def process_scan(scan_id: str, video_path: str | None = None, image_paths: list[str] | None = None) -> None:
 
 
