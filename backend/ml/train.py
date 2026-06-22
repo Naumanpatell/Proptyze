@@ -1,15 +1,3 @@
-"""
-train.py — Train a YOLOv8 model on a pre-merged dataset.
-
-Run from: backend/ml/
-    python train.py --model condition
-    python train.py --model security
-
-Run the relevant merge script first:
-    python merge_condition.py
-    python merge_security.py
-"""
-
 import argparse
 from pathlib import Path
 
@@ -56,14 +44,14 @@ def train(model_name: str) -> None:
     print(f"  Dataset : {data_yaml}")
     print(f"  Device  : {device_label}\n")
 
-    model = YOLO("yolov8n.pt")   # swap to yolov8s.pt for more accuracy
+    model = YOLO("yolov8n.pt")
 
     model.train(
         data=str(data_yaml),
-        epochs=50,
+        epochs=100,
         imgsz=640,
-        batch=16,
-        patience=20,
+        batch=8,
+        patience=30,
         device=device,
         project=str(cfg["runs_dir"]),
         name="v1",
@@ -76,6 +64,7 @@ def train(model_name: str) -> None:
         val=True,
         save=True,
         verbose=True,
+        workers=0,
     )
 
     best = cfg["runs_dir"] / "v1" / "weights" / "best.pt"
@@ -92,4 +81,4 @@ if __name__ == "__main__":
         help="Which model to train (default: condition)",
     )
     args = parser.parse_args()
-    train(args.model)
+4    train(args.model)

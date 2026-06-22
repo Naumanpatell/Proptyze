@@ -57,6 +57,11 @@ def _resolve_split_dir(data_yaml: dict, split: str, dataset_dir: Path) -> Path |
             candidate = dataset_dir / p
             if candidate.exists():
                 return candidate
+            # Roboflow exports use ../split/images relative to yaml; strip leading '..'
+            stripped = Path(*[part for part in p.parts if part != '..'])
+            candidate2 = dataset_dir / stripped
+            if candidate2.exists():
+                return candidate2
     return None
 
 
@@ -171,7 +176,7 @@ def merge() -> Path:
     with open(yaml_out, "w") as f:
         yaml.dump(yaml_data, f, default_flow_style=False, allow_unicode=True)
 
-    print(f"data.yaml → {yaml_out}")
+    print(f"data.yaml -> {yaml_out}")
     return yaml_out
 
 
