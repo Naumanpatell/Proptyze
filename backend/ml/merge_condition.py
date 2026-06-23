@@ -32,6 +32,9 @@ DATASET_CLASS_MAPS: dict[str, dict[str, str | None]] = {
     "peeling_paint_2": {
         "*": "peeling_paint",
     },
+    "mould_synthetic": {
+        "*": "mould",
+    },
     # broken_fixture: no dataset yet — add entry here when data is available
 }
 
