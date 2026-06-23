@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     upload_dir: str = "uploads"
     max_upload_size_mb: int = 500
     allowed_video_formats: list[str] = ["mp4", "mov", "avi"]
+    roboflow_api_key: str = ""
 
     class Config:
         env_file = ".env"
