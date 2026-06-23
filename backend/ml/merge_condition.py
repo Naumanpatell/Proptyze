@@ -35,6 +35,12 @@ DATASET_CLASS_MAPS: dict[str, dict[str, str | None]] = {
     "mould_synthetic": {
         "*": "mould",
     },
+    "damp_synthetic": {
+        "*": "damp",
+    },
+    "wall_crack_synthetic": {
+        "*": "wall_crack",
+    },
     # broken_fixture: no dataset yet — add entry here when data is available
 }
 
