@@ -33,6 +33,12 @@ DATASET_CLASS_MAPS: dict[str, dict[str, str | None]] = {
     "camera_blind_spot": {
         "*": "camera_blind_spot",
     },
+    "camera_blind_spot_synthetic": {
+        "*": "camera_blind_spot",
+    },
+    "weak_entry_synthetic": {
+        "*": "weak_entry",
+    },
     # fence_gap: workspace slug still TBD — add entry here when dataset is confirmed
 }
 
