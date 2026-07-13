@@ -1,11 +1,3 @@
-"""
-test_sahi.py — Compare standard whole-image inference vs SAHI sliced inference.
-
-Run from: backend/ml/
-    python test_sahi.py --image datasets/condition/mould/valid/images/some.jpg
-    python test_sahi.py --image path/to/frame.jpg --conf 0.2 --slice-height 256
-"""
-
 import argparse
 from collections import defaultdict
 from pathlib import Path

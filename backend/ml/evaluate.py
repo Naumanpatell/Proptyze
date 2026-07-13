@@ -1,12 +1,5 @@
 """
 evaluate.py — Evaluate a trained model and print per-class metrics.
-
-When both v1 and v2 weights exist, automatically prints a side-by-side
-comparison table with a ΔRecall column.
-
-Run from: backend/ml/
-    python evaluate.py --model condition
-    python evaluate.py --model security
 """
 
 import argparse
@@ -47,7 +40,7 @@ def find_weights(runs_dir: Path) -> Path:
 def _run_val(weights: Path, data_yaml: Path) -> tuple:
     """Run validation; return (per_class_dict, overall_dict)."""
     model   = YOLO(str(weights))
-    metrics = model.val(data=str(data_yaml), plots=True, save_json=True, verbose=False, workers=0)
+    metrics = model.val(data=str(data_yaml), plots=True, save_json=True, verbose=False, workers=0)  # workers=0 avoids "RuntimeError: received 0 items of ancdata" on Windows
 
     box       = metrics.box
     names     = metrics.names
@@ -177,7 +170,7 @@ def _print_comparison(classes: list, pc1: dict, ov1: dict, pc2: dict, ov2: dict,
                 print(f"  {cls_name:<20} (no val data for one or both versions)")
 
 
-def evaluate(model_name: str, v1_name: str = "v1", v2_name: str = "v2") -> None:
+def evaluate(model_name: str) -> None:
     cfg       = MODELS[model_name]
     data_yaml = cfg["data_yaml"]
     runs_dir  = cfg["runs_dir"]
@@ -188,20 +181,19 @@ def evaluate(model_name: str, v1_name: str = "v1", v2_name: str = "v2") -> None:
         print(f"       Run: python merge_{model_name}.py")
         return
 
-    print("=" * 60)
-    print(f"  Proptyze — {model_name.capitalize()} Model Evaluation")
-    print("=" * 60)
+    print(f"------------------- Proptyze  {model_name.capitalize()} Model Evaluation--------------------")
 
-    v1 = runs_dir / v1_name / "weights" / "best.pt"
-    v2 = runs_dir / v2_name / "weights" / "best.pt"
+
+    v1 = runs_dir / "v1" / "weights" / "best.pt"
+    v2 = runs_dir / "v2" / "weights" / "best.pt"
 
     if v1.exists() and v2.exists():
-        print(f"  Found {v1_name} and {v2_name} — running side-by-side comparison.\n")
+        print(f"  Found v1 and v2 — running side-by-side comparison.\n")
         print(f"  Evaluating {v1} …")
         pc1, ov1 = _run_val(v1, data_yaml)
         print(f"  Evaluating {v2} …")
         pc2, ov2 = _run_val(v2, data_yaml)
-        _print_comparison(classes, pc1, ov1, pc2, ov2, v1_name, v2_name)
+        _print_comparison(classes, pc1, ov1, pc2, ov2, "v1", "v2")
     else:
         weights = v1 if v1.exists() else find_weights(runs_dir)
         if not weights.exists():
@@ -216,8 +208,11 @@ def evaluate(model_name: str, v1_name: str = "v1", v2_name: str = "v2") -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", choices=["condition", "security"], default="condition")
-    parser.add_argument("--v1-name", default="v1", help="First version to compare (default: v1)")
-    parser.add_argument("--v2-name", default="v2", help="Second version to compare (default: v2)")
+    parser.add_argument(
+        "--model",
+        choices=["condition", "security"],
+        default="condition",
+        help="Which model to evaluate (default: condition)",
+    )
     args = parser.parse_args()
-    evaluate(args.model, args.v1_name, args.v2_name)
+    evaluate(args.model)

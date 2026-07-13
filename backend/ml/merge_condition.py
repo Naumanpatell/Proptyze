@@ -29,9 +29,6 @@ DATASET_CLASS_MAPS: dict[str, dict[str, str | None]] = {
     "peeling_paint_1": {
         "*": "peeling_paint",
     },
-    "peeling_paint_2": {
-        "*": "peeling_paint",
-    },
     "mould_synthetic": {
         "*": "mould",
     },

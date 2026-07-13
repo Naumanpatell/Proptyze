@@ -1,15 +1,6 @@
 """
 synthesize_composites_camera.py — Paste camera patches onto wall/building backgrounds.
 
-Output lands in:
-  backend/ml/datasets/security/camera_blind_spot_synthetic/train/images/
-  backend/ml/datasets/security/camera_blind_spot_synthetic/train/labels/
-
-Labels use class 0 (camera_blind_spot within sub-dataset).
-Add camera_blind_spot_synthetic to DATASET_CLASS_MAPS in merge_security.py when ready.
-
-Run from: backend/ml/
-    python synthesize_composites_camera.py
 """
 
 import argparse
