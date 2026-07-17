@@ -1,17 +1,6 @@
 """
 synthesize_composites_wall_crack.py — Paste crack patches onto clean background crops
 to manufacture walkthrough-distance training examples.
-
-Output lands in:
-  backend/ml/datasets/condition/wall_crack_synthetic/train/images/
-  backend/ml/datasets/condition/wall_crack_synthetic/train/labels/
-
-Labels use class 0 (wall_crack within sub-dataset).
-Add wall_crack_synthetic to DATASET_CLASS_MAPS in merge_condition.py when ready.
-
-Run from: backend/ml/
-    python synthesize_composites_wall_crack.py
-    python synthesize_composites_wall_crack.py --target 800 --seed 123
 """
 
 import argparse
