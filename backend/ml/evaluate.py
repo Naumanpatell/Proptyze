@@ -1,10 +1,12 @@
 """
 evaluate.py — Evaluate a trained model and print per-class metrics.
+Automatically finds the latest version and shows current status.
 """
 
 import argparse
 import math
 from pathlib import Path
+from datetime import datetime
 
 try:
     from ultralytics import YOLO
@@ -21,6 +23,11 @@ MODELS = {
         "runs_dir":  ML_DIR / "runs" / "condition",
         "classes":   ["wall_crack", "damp", "mould", "peeling_paint", "broken_fixture"],
     },
+    "condition_peeling": {
+        "data_yaml": ML_DIR / "datasets" / "condition" / "merged_peeling" / "data.yaml",
+        "runs_dir":  ML_DIR / "runs" / "condition_peeling",
+        "classes":   ["wall_crack", "damp", "mould", "peeling_paint", "broken_fixture"],
+    },
     "security": {
         "data_yaml": ML_DIR / "datasets" / "security" / "merged" / "data.yaml",
         "runs_dir":  ML_DIR / "runs" / "security",
@@ -28,22 +35,33 @@ MODELS = {
     },
 }
 
+# Which merge script to point people to when data.yaml is missing
+_MERGE_SCRIPT = {
+    "condition":         "merge_condition.py",
+    "condition_peeling": "merge_condition_peeling.py",
+    "security":          "merge_security.py",
+}
 
-def find_weights(runs_dir: Path) -> Path:
-    default = runs_dir / "v1" / "weights" / "best.pt"
-    if default.exists():
-        return default
-    candidates = sorted(runs_dir.glob("*/weights/best.pt"), key=lambda p: p.stat().st_mtime)
-    return candidates[-1] if candidates else default
+
+def find_latest_version(runs_dir: Path) -> tuple:
+    """Find the latest trained version by modification time"""
+    candidates = list(runs_dir.glob("v*/weights/best.pt"))
+    if not candidates:
+        return None, None
+    
+    latest = max(candidates, key=lambda p: p.stat().st_mtime)
+    version = latest.parent.parent.name  # e.g., "v2"
+    mtime = datetime.fromtimestamp(latest.stat().st_mtime)
+    return latest, mtime
 
 
-def _run_val(weights: Path, data_yaml: Path) -> tuple:
-    """Run validation; return (per_class_dict, overall_dict)."""
-    model   = YOLO(str(weights))
-    metrics = model.val(data=str(data_yaml), plots=True, save_json=True, verbose=False, workers=0)  # workers=0 avoids "RuntimeError: received 0 items of ancdata" on Windows
+def run_val(weights: Path, data_yaml: Path) -> tuple:
+    """Run validation; return (per_class_dict, overall_dict)"""
+    model = YOLO(str(weights))
+    metrics = model.val(data=str(data_yaml), plots=False, save_json=False, verbose=False, workers=0)
 
-    box       = metrics.box
-    names     = metrics.names
+    box = metrics.box
+    names = metrics.names
     evaluated = list(box.ap_class_index) if hasattr(box, "ap_class_index") else []
 
     per_class = {}
@@ -55,41 +73,42 @@ def _run_val(weights: Path, data_yaml: Path) -> tuple:
             "ap50": float(box.ap50[j]) if box.ap50 is not None else math.nan,
             "ap":   float(box.ap[j])   if box.ap   is not None else math.nan,
         }
+    
     overall = {
         "mp":    float(box.mp),
         "mr":    float(box.mr),
         "map50": float(box.map50),
         "map":   float(box.map),
     }
+    
     return per_class, overall
 
 
-def _print_single(weights: Path, classes: list, per_class: dict, overall: dict, model_name: str) -> None:
-    print(f"\n{'=' * 60}")
-    print(f"  {'Class':<20} {'Precision':>10} {'Recall':>8} {'mAP50':>8} {'mAP50-95':>10}")
-    print("  " + "-" * 58)
-
+def print_model_status(model_name: str, weights: Path, mtime: datetime, per_class: dict, overall: dict, classes: list):
+    """Print a single model's status"""
+    print(f"\n{'='*90}")
+    print(f"  MODEL: {model_name.upper()}")
+    print(f"  WEIGHTS: {weights}")
+    print(f"  TRAINED: {mtime.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"{'='*90}")
+    
+    print(f"\n  {'Class':<20} {'Precision':>12} {'Recall':>10} {'mAP50':>10} {'mAP50-95':>12}")
+    print(f"  {'-'*90}")
+    
     for cls_name in classes:
         if cls_name in per_class:
             d = per_class[cls_name]
-            print(f"  {cls_name:<20} {d['p']:>10.3f} {d['r']:>8.3f} {d['ap50']:>8.3f} {d['ap']:>10.3f}")
+            p_str = f"{d['p']:.3f}" if not math.isnan(d['p']) else "—"
+            r_str = f"{d['r']:.3f}" if not math.isnan(d['r']) else "—"
+            ap50_str = f"{d['ap50']:.3f}" if not math.isnan(d['ap50']) else "—"
+            ap_str = f"{d['ap']:.3f}" if not math.isnan(d['ap']) else "—"
+            print(f"  {cls_name:<20} {p_str:>12} {r_str:>10} {ap50_str:>10} {ap_str:>12}")
         else:
-            print(f"  {cls_name:<20} {'(no val data)':>39}")
-
-    print("  " + "-" * 58)
-    print(f"  {'ALL (mean)':<20} {overall['mp']:>10.3f} {overall['mr']:>8.3f} {overall['map50']:>8.3f} {overall['map']:>10.3f}")
-    print("=" * 60)
-
-    print("\nSanity check:")
-    m = overall["map50"]
-    if m >= 0.7:
-        print(f"  mAP50 {m:.3f} — looks good, ready to integrate.")
-    elif m >= 0.5:
-        print(f"  mAP50 {m:.3f} — reasonable start; more data or epochs will help.")
-    else:
-        print(f"  mAP50 {m:.3f} — low; check class mappings and dataset quality.")
-
-    print(f"\nResults and plots → {weights.parent.parent}")
+            print(f"  {cls_name:<20} {'(no validation data)':>44}")
+    
+    print(f"  {'-'*90}")
+    print(f"  {'OVERALL (mean)':<20} {overall['mp']:>12.3f} {overall['mr']:>10.3f} {overall['map50']:>10.3f} {overall['map']:>12.3f}")
+    print(f"{'='*90}\n")
 
 
 def _print_comparison(classes: list, pc1: dict, ov1: dict, pc2: dict, ov2: dict,
@@ -97,9 +116,7 @@ def _print_comparison(classes: list, pc1: dict, ov1: dict, pc2: dict, ov2: dict,
     """Side-by-side comparison table with ΔRecall column."""
     CW    = 20   # class name width
     VW    = 7    # per-metric column width
-    # one block of 4 value cols: "p r ap50 ap" = VW*4 + 3 spaces = 31
     BLOCK = VW * 4 + 3
-    # full row: 2 indent + CW + 2 + BLOCK + 2 + BLOCK + 2 + 8 ΔRecall = 98
     SEP   = 98
 
     def fv(d, key):
@@ -117,7 +134,7 @@ def _print_comparison(classes: list, pc1: dict, ov1: dict, pc2: dict, ov2: dict,
         return f"{b - a:>+8.3f}"
 
     print("\n" + "=" * SEP)
-    print(f"  Proptyze — Comparison: {label1}  vs  {label2}")
+    print(f"  COMPARISON: {label1}  vs  {label2}")
     print("=" * SEP)
 
     blk1 = f"{'— ' + label1 + ' —':^{BLOCK}}"
@@ -140,10 +157,10 @@ def _print_comparison(classes: list, pc1: dict, ov1: dict, pc2: dict, ov2: dict,
     print(f"  {'ALL (mean)':<{CW}}  {vals(o1)}  {vals(o2)}  {dr_all}")
     print("=" * SEP)
 
-    # Mould/damp spotlight (only printed when those classes exist in the model)
-    focus = [c for c in ("mould", "damp") if c in classes]
+    # Focus on problem classes
+    focus = [c for c in ("mould", "damp", "peeling_paint") if c in classes]
     if focus:
-        print("\nMould / damp recall:")
+        print("\nProblem class recall (key focus areas):")
         for cls_name in focus:
             d1 = pc1.get(cls_name)
             d2 = pc2.get(cls_name)
@@ -151,21 +168,6 @@ def _print_comparison(classes: list, pc1: dict, ov1: dict, pc2: dict, ov2: dict,
                 r1, r2 = d1["r"], d2["r"]
                 arrow  = "▲" if r2 > r1 else ("▼" if r2 < r1 else "—")
                 print(f"  {cls_name:<20} {r1:.3f} → {r2:.3f}  ({arrow} {r2 - r1:+.3f})")
-            else:
-                print(f"  {cls_name:<20} (no val data for one or both versions)")
-
-    # Regression check for the other classes
-    other = [c for c in classes if c not in set(focus)]
-    if other:
-        print("\nRegression check (other classes):")
-        for cls_name in other:
-            d1 = pc1.get(cls_name)
-            d2 = pc2.get(cls_name)
-            if d1 and d2:
-                dr = d2["r"]    - d1["r"]
-                da = d2["ap50"] - d1["ap50"]
-                tag = "REGRESSED" if (dr < -0.05 or da < -0.05) else "OK        "
-                print(f"  {cls_name:<20} {tag}  ΔRecall={dr:+.3f}  ΔmAP50={da:+.3f}")
             else:
                 print(f"  {cls_name:<20} (no val data for one or both versions)")
 
@@ -178,39 +180,54 @@ def evaluate(model_name: str) -> None:
 
     if not data_yaml.exists():
         print(f"ERROR: No data.yaml at {data_yaml}")
-        print(f"       Run: python merge_{model_name}.py")
+        print(f"       Run: python {_MERGE_SCRIPT.get(model_name, 'merge_' + model_name + '.py')}")
         return
 
-    print(f"------------------- Proptyze  {model_name.capitalize()} Model Evaluation--------------------")
+    print(f"\n{'='*90}")
+    print(f"  PROPTYZE {model_name.upper()} MODEL — CURRENT STATUS")
+    print(f"{'='*90}")
 
-
-    v1 = runs_dir / "v1" / "weights" / "best.pt"
-    v2 = runs_dir / "v2" / "weights" / "best.pt"
-
-    if v1.exists() and v2.exists():
-        print(f"  Found v1 and v2 — running side-by-side comparison.\n")
-        print(f"  Evaluating {v1} …")
-        pc1, ov1 = _run_val(v1, data_yaml)
-        print(f"  Evaluating {v2} …")
-        pc2, ov2 = _run_val(v2, data_yaml)
-        _print_comparison(classes, pc1, ov1, pc2, ov2, "v1", "v2")
-    else:
-        weights = v1 if v1.exists() else find_weights(runs_dir)
-        if not weights.exists():
-            print(f"ERROR: No weights found at {weights}")
-            print(f"       Run: python train.py --model {model_name}")
-            return
-        print(f"  Weights : {weights}")
-        print(f"  Dataset : {data_yaml}\n")
-        per_class, overall = _run_val(weights, data_yaml)
-        _print_single(weights, classes, per_class, overall, model_name)
+    # Find the LATEST version
+    weights, mtime = find_latest_version(runs_dir)
+    if not weights:
+        print(f"ERROR: No weights found in {runs_dir}")
+        print(f"       Run: python train.py --model {model_name}")
+        return
+    
+    version = weights.parent.parent.name
+    print(f"  Evaluating latest version: {version}")
+    print(f"  Dataset: {data_yaml}")
+    print(f"  Trained: {mtime.strftime('%Y-%m-%d %H:%M:%S')}\n")
+    
+    per_class, overall = run_val(weights, data_yaml)
+    print_model_status(model_name, weights, mtime, per_class, overall, classes)
+    
+    # Special check for condition_peeling: also evaluate on FULL condition dataset
+    if model_name == "condition_peeling":
+        print(f"\n  REGRESSION CHECK: Evaluating on FULL condition dataset...")
+        full_dataset = ML_DIR / "datasets" / "condition" / "merged" / "data.yaml"
+        if full_dataset.exists():
+            per_class_full, overall_full = run_val(weights, full_dataset)
+            print_model_status(f"{model_name} (full dataset)", weights, mtime, per_class_full, overall_full, classes)
+            
+            # Quick comparison
+            print(f"\n  {'='*90}")
+            print(f"  COMPARISON:")
+            print(f"  {'='*90}")
+            print(f"  On peeling-focused dataset:  mAP50 = {overall['map50']:.3f}")
+            print(f"  On full condition dataset:   mAP50 = {overall_full['map50']:.3f}")
+            
+            if overall_full['map50'] >= 0.55:
+                print(f"  NO REGRESSION! Safe to use in production\n")
+            else:
+                print(f"  Performance dropped on full dataset - may need retraining\n")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--model",
-        choices=["condition", "security"],
+        choices=["condition", "condition_peeling", "security"],
         default="condition",
         help="Which model to evaluate (default: condition)",
     )

@@ -13,7 +13,7 @@ ML_DIR = Path(__file__).parent
 
 MODELS = {
     "condition": {
-        "data_yaml": ML_DIR / "datasets" / "condition" / "merged" / "data.yaml",
+        "data_yaml": ML_DIR / "datasets" / "condition" / "merged_boosted" / "data.yaml",  # ← BOOSTED DATASET
         "runs_dir":  ML_DIR / "runs" / "condition",
         "classes":   ["wall_crack", "damp", "mould", "peeling_paint", "broken_fixture"],
     },
@@ -44,7 +44,10 @@ def train(model_name: str, weights: str, epochs, lr0, name) -> None:
 
     if not data_yaml.exists():
         print(f"ERROR: {data_yaml} not found.")
-        print(f"       Run: python merge_{model_name}.py")
+        if model_name == "condition":
+            print(f"       Run: python merge_condition_boosted.py")
+        else:
+            print(f"       Run: python merge_{model_name}.py")
         raise SystemExit(1)
 
     fine_tune = weights != "yolov8n.pt"
